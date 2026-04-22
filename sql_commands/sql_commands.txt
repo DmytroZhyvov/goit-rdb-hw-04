@@ -1,0 +1,178 @@
+1.a
+CREATE SCHEMA LibraryManagement;
+
+1.b
+CREATE TABLE authors (
+    author_id INT AUTO_INCREMENT PRIMARY KEY,
+    author_name VARCHAR(255)
+ );
+
+1.c
+CREATE TABLE genres (
+    genre_id INT AUTO_INCREMENT PRIMARY KEY,
+    genre_name VARCHAR(255)
+ );
+
+1.d
+CREATE TABLE books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    publication_year YEAR,
+    author_id INT,
+    genre_id INT,
+    FOREIGN KEY (author_id) REFERENCES authors(author_id),
+    FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
+);
+
+1.e
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255),
+    email VARCHAR(255)
+);
+
+1.f
+CREATE TABLE borrowed_books (
+    borrow_id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    user_id INT,
+    borrow_date DATE,
+    return_date date,
+    FOREIGN KEY (book_id) REFERENCES books(book_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+2.
+INSERT INTO authors (author_name)
+VALUES ('Ernest Hemingway'),
+('F. Scott Fitzgerald'),
+('John Dos Passos');
+
+INSERT INTO genres (genre_name)
+VALUES ('Modernist Literature'),
+('War Fiction'),
+('Historical Fiction');
+
+INSERT INTO users (username, email)
+VALUES ('dmytro_dev', 'dmytro.dev@example.com'),
+('anna_reader', 'anna.reader@example.com'),
+('max_books', 'max.books@example.com');
+
+INSERT INTO books (title, publication_year, author_id, genre_id)
+VALUES ('The Sun Also Rises', 1926, 1, 1),
+('A Farewell to Arms', 1929, 1, 2),
+('The Great Gatsby', 1925, 2, 1),
+('Tender Is the Night', 1934, 2, 1),
+('The 42nd Parallel', 1930, 3, 3);
+
+INSERT INTO borrowed_books (book_id, user_id, borrow_date, return_date)
+VALUES (1, 1, '2026-04-01', '2026-04-10'),
+(2, 2, '2026-04-05', '2026-04-15'),
+(3, 3, '2026-04-07', NULL),
+(4, 1, '2026-04-10', '2026-04-20'),
+(5, 2, '2026-04-12', NULL);
+
+3.
+SELECT * FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id;
+
+4.1
+SELECT COUNT(*) FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id;
+
+4.2
+SELECT COUNT(*) FROM order_details
+LEFT JOIN orders ON order_details.order_id = orders.id
+RIGHT JOIN customers ON orders.customer_id = customers.id
+LEFT JOIN employees ON orders.employee_id = employees.employee_id
+LEFT JOIN products ON order_details.product_id = products.id
+LEFT JOIN categories ON products.category_id = categories.id
+LEFT JOIN suppliers ON products.supplier_id = suppliers.id
+LEFT JOIN shippers ON orders.shipper_id = shippers.id;
+
+Explanation:
+I modified the original query by replacing INNER joins with LEFT and RIGHT JOINs.
+After that, the number of rows increased from 518 to 535.
+
+1. This happened because RIGHT JOIN returns all rows from the right table, even if there are no matching rows in the left table.
+In my case, the RIGHT JOIN was applied to the customers table:
+RIGHT JOIN customers ON orders.customer_id = customers.id;
+
+2. This means that all customers are included in the result.
+If some customers do not have any related records in the orders table, they are still returned, and the columns from the orders table and related tables contain NULL values.
+
+3. With INNER JOIN, only rows with matching values in both tables are returned, so customers without orders are excluded.
+
+Summary: the number of rows increased because RIGHT JOIN added extra rows for customers who do not have corresponding records in the orders table.
+
+4.3
+SELECT * FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id
+WHERE employees.employee_id BETWEEN 3 and 10;
+
+4.4
+SELECT categories.name,COUNT(*) AS row_count, AVG(order_details.quantity) AS avg_quantity
+FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id
+GROUP BY categories.name;
+
+4.5
+SELECT categories.name,COUNT(*) AS row_count, AVG(order_details.quantity) AS avg_quantity
+FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id
+GROUP BY categories.name
+HAVING AVG(order_details.quantity) > 21;
+
+4.6
+SELECT categories.name, COUNT(*) AS row_count
+FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id
+GROUP BY categories.name
+ORDER BY row_count DESC;
+
+4.7
+SELECT * FROM order_details
+INNER JOIN orders ON order_details.order_id = orders.id
+INNER JOIN customers ON orders.customer_id = customers.id
+INNER JOIN employees ON orders.employee_id = employees.employee_id
+INNER JOIN products ON order_details.product_id = products.id
+INNER JOIN categories ON products.category_id = categories.id
+INNER JOIN suppliers ON products.supplier_id = suppliers.id
+INNER JOIN shippers ON orders.shipper_id = shippers.id
+LIMIT 4 OFFSET 1;
